@@ -152,34 +152,7 @@ def main():
                 number_of_edges = dataset.graph.number_of_edges(),
                 num_layers=args.num_layers,
                 )
-        elif args.model =='FAGCN':
-            g = dataset.graph.to(args.device)
-            deg = g.in_degrees().to(args.device).float().clamp(min=1)
-            norm = torch.pow(deg, -0.5)
-            g.ndata['d'] = norm
-            model = FAGCN(g, dataset.num_node_features, args.hidden_dim, dataset.num_targets, args.dropout, 0.3, args.num_layers).to(args.device)
-        elif args.model == 'GCNII':
-            model = GCNII(nfeat=dataset.num_node_features,
-                nlayers=args.num_layers,
-                nhidden=args.hidden_dim,
-                nclass=dataset.num_targets + 1,
-                dropout=args.dropout,
-                lamda = 0.5, 
-                alpha=0.1,
-                variant= False).to(args.device)
-        elif args.model == 'GPRGNN':
-            model = GPRGNN(dataset.num_node_features, args.hidden_dim, dataset.num_targets,args.device)
-        else:
-            model = Model(model_name=args.model,
-                          num_layers=args.num_layers,
-                          input_dim=dataset.num_node_features,
-                          hidden_dim=args.hidden_dim,
-                          output_dim=dataset.num_targets,
-                          hidden_dim_multiplier=args.hidden_dim_multiplier,
-                          num_heads=args.num_heads,
-                          normalization=args.normalization,
-                          dropout=args.dropout)
-
+ 
 
         model.to(args.device)
 
