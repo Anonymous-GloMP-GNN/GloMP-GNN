@@ -4,7 +4,6 @@ from torch.nn import CrossEntropyLoss
 import torch.nn.functional as F
 import torch
 from torch.cuda.amp import autocast, GradScaler
-from GCNII import GCNII
 from model import MyModel
 from datasets import Dataset
 from utils import Logger, get_parameter_groups, get_lr_scheduler_with_warmup,get_adj
