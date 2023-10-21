@@ -5,9 +5,7 @@ import torch.nn.functional as F
 import torch
 from torch.cuda.amp import autocast, GradScaler
 from GCNII import GCNII
-from model import Model, MyModel
-from FAGCN import FAGCN
-from GPRGNN import GPRGNN
+from model import MyModel
 from datasets import Dataset
 from utils import Logger, get_parameter_groups, get_lr_scheduler_with_warmup,get_adj
 import networkx as nx
