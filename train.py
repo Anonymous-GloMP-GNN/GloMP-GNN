@@ -118,7 +118,10 @@ def main():
         if args.model == 'my_model':
             #######                                        
             dataset.graph.add_nodes(1)
-            dataset.graph.add_edges(len(dataset.node_features),range(len(dataset.node_features)))
+            add_edge_num = args.add_edge_num
+            add_edge = random.sample(range(0, len(dataset.node_features)), add_edge_num)
+            dataset.graph.add_edges(len(dataset.node_features),add_edge)
+            # dataset.graph.add_edges(len(dataset.node_features),range(len(dataset.node_features)))
             l_x,_ = torch.max(dataset.node_features,0)
             # l_x = torch.mean(dataset.node_features,0)        
             l_x = l_x.unsqueeze(1).T
@@ -130,6 +133,7 @@ def main():
                 output_dim=dataset.num_targets,
                 hidden_dim_multiplier=args.hidden_dim_multiplier,
                 num_heads=args.num_heads,
+                num_nodes = dataset.node_features.shape[0],
                 normalization=args.normalization,
                 dropout=args.dropout, 
                 number_of_edges = dataset.graph.number_of_edges(),
@@ -137,19 +141,21 @@ def main():
                 args = args
                 )
 
+
         elif args.model =='my_model_no_node':
-            model = MyModel(args,
+            model = MyModel(
                 input_dim=dataset.num_node_features,
                 hidden_dim=args.hidden_dim,
                 output_dim=dataset.num_targets,
                 hidden_dim_multiplier=args.hidden_dim_multiplier,
                 num_heads=args.num_heads,
+                num_nodes = dataset.node_features.shape[0],
                 normalization=args.normalization,
                 dropout=args.dropout, 
                 number_of_edges = dataset.graph.number_of_edges(),
                 num_layers=args.num_layers,
+                args = args
                 )
- 
 
         model.to(args.device)
 
