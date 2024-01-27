@@ -39,9 +39,8 @@ class FeedForwardModule(nn.Module):
         return x
 
 
-
 class MaxwellDemonFilter(nn.Module):
-    def __init__(self, dim, hidden_dim_multiplier, num_heads,dropout,number_of_edges,args):
+    def __init__(self, dim, hidden_dim_multiplier, num_heads,num_nodes, dropout,number_of_edges,args):
         super(MaxwellDemonFilter, self).__init__()
         self.fc = nn.Linear(dim, dim)
 
@@ -50,6 +49,7 @@ class MaxwellDemonFilter(nn.Module):
         self.dim = dim
         self.num_heads = num_heads
         self.head_dim = dim // num_heads
+        self.num_nodes = num_nodes
         self.fc_layer = nn.Linear(self.head_dim,1)
         self.input_linear = nn.Linear(in_features=dim, out_features=dim)
         self.number_of_edges = number_of_edges
@@ -65,24 +65,20 @@ class MaxwellDemonFilter(nn.Module):
                                                      input_dim_multiplier=self.input_dim_multiplier,
                                                      hidden_dim_multiplier=hidden_dim_multiplier,
                                                      dropout=dropout)
-        # self.maxwell_filter_layer = nn.Linear(dim, self.number_of_edges)
-        self.maxwell_filter_layer = nn.Linear(891 , self.number_of_edges * self.num_heads)
-        # self.new_linear_layer = nn.Linear(2 * self.num_heads, self.num_heads)
+
         self.gate_weight = nn.Parameter(torch.Tensor(self.dim))
         self.gate_bias = nn.Parameter(torch.Tensor(self.dim))
         self.fc_laplace = nn.Linear(self.dim, self.dim)
         self.k =  nn.Parameter(torch.Tensor(1))
         # self.new_linear_layer = nn.Linear(2 * self.dim, self.dim)
-        self.get_laplace = nn.Linear(self.dim, self.num_heads)
+
         self.chaos_factor = nn.Parameter(torch.Tensor(1))
         self.tanh = nn.Tanh()
         self.sim = nn.Linear(dim,dim)
-    def get_laplace_demon_state(self, x):
-        laplace = self.get_laplace(x)
-        # # laplace,_ = torch.max(x,0)
-        # laplace = laplace.reshape(1,-1) 
-        # return 
-        # 加入混沌扰动
+        self.device = args.device
+        self.get_laplace = nn.Linear(self.num_nodes, self.num_heads)
+    def get_global_state(self, x):
+        laplace = self.get_laplace(x@x.T)
         chaos_disturbance = torch.randn_like(laplace) * self.chaos_factor
         laplace += chaos_disturbance
         return laplace
@@ -96,14 +92,9 @@ class MaxwellDemonFilter(nn.Module):
     def cosine_similarity(self, x1, x2, dim=-1):
         return F.cosine_similarity(x1, x2, dim=dim)
     def compute_energy(self, x, graph):
-        laplace_demon_state = self.get_laplace_demon_state(x)
-        
-        # 计算每个节点邻居的平均Laplace Demon状态
-        neighbor_average = ops.copy_u_mean(graph, laplace_demon_state)
-        
-        # 能量函数：节点的Laplace Demon状态与其邻居的差异
-        energy = laplace_demon_state - neighbor_average
-        
+        global_state = self.get_global_state(x)
+        neighbor_average = ops.copy_u_mean(graph, global_state)
+        energy = global_state - neighbor_average
         return energy
 
     def forward(self, graph,x):
