@@ -23,9 +23,8 @@ NORMALIZATION = {
     'BatchNorm': nn.BatchNorm1d
 }
 
-
 class MyModel(nn.Module):
-    def __init__(self, args, input_dim, hidden_dim,output_dim,hidden_dim_multiplier, num_heads,normalization, dropout,number_of_edges, num_layers):
+    def __init__(self, args, input_dim, hidden_dim,output_dim,hidden_dim_multiplier, num_heads,num_nodes,normalization, dropout,number_of_edges, num_layers):
         super(MyModel, self).__init__()
         self.args = args
 
@@ -39,6 +38,7 @@ class MyModel(nn.Module):
                                                     dim=hidden_dim,
                                                     hidden_dim_multiplier=hidden_dim_multiplier,
                                                     num_heads=num_heads,
+                                                    num_nodes = num_nodes,
                                                     dropout=dropout,
                                                     number_of_edges = number_of_edges,
                                                     args= self.args
@@ -50,8 +50,7 @@ class MyModel(nn.Module):
         self.act = nn.GELU()
         self.output_normalization = normalization(hidden_dim * (num_layers+1))
         self.output_linear = nn.Linear(in_features=hidden_dim * (num_layers+1), out_features=output_dim)
-        # self.output_normalization = normalization(hidden_dim )
-        # self.output_linear = nn.Linear(in_features=hidden_dim, out_features=output_dim)
+
 
     def forward(self,graph,x):
         x = self.input_linear(x)
@@ -64,9 +63,7 @@ class MyModel(nn.Module):
 
         x_all = self.output_normalization(x_all)
         x_all = self.output_linear(x_all).squeeze(1)
-        # x = self.output_normalization(x)
-        # x = self.output_linear(x).squeeze(1)
 
         return x_all
-        # return x
+
 
