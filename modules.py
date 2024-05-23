@@ -78,7 +78,7 @@ class MaxwellDemonFilter(nn.Module):
         self.r = nn.Parameter(torch.tensor([1.0]))
         self.filter = nn.Linear(self.num_heads,1)
     def get_global_state(self, x):
-        GSM = self.global_state(x@x.T)
+        GSM = self.get_laplace(x@x.T)
         chaos_disturbance = torch.randn_like(GSM) * self.chaos_factor
         GSM += chaos_disturbance
         return GSM
