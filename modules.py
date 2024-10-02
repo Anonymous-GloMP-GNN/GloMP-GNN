@@ -39,7 +39,7 @@ class FeedForwardModule(nn.Module):
         return x
 
 class MaxwellDemonFilter(nn.Module):
-    def __init__(self, dim, hidden_dim_multiplier, num_heads,num_nodes, dropout,number_of_edges,args):
+    def __init__(self, dim, xx_initial, hidden_dim_multiplier, num_heads,num_nodes, dropout,number_of_edges,args):
         super(MaxwellDemonFilter, self).__init__()
         self.fc = nn.Linear(dim, dim)
 
@@ -64,11 +64,10 @@ class MaxwellDemonFilter(nn.Module):
                                                      input_dim_multiplier=self.input_dim_multiplier,
                                                      hidden_dim_multiplier=hidden_dim_multiplier,
                                                      dropout=dropout)
-
+        self.xx = xx_initial
         self.gate_weight = nn.Parameter(torch.Tensor(self.dim))
         self.gate_bias = nn.Parameter(torch.Tensor(self.dim))
         self.fc_laplace = nn.Linear(self.dim, self.dim)
-        # self.new_linear_layer = nn.Linear(2 * self.dim, self.dim)
 
         self.chaos_factor = nn.Parameter(torch.Tensor(1))
         self.tanh = nn.Tanh()
@@ -76,11 +75,11 @@ class MaxwellDemonFilter(nn.Module):
         self.device = args.device
         self.get_laplace = nn.Linear(self.num_nodes, self.num_heads)
         self.r = nn.Parameter(torch.tensor([1.0]))
-        self.filter = nn.Linear(self.num_heads,1)
-    def get_global_state(self, x):
-        GSM = self.get_laplace(x@x.T)
+        self.filter = nn.Linear(self.num_heads*2,1)
+    def get_global_state(self, x, xx_initial):
+        GSM = self.get_laplace(xx_initial)
         chaos_disturbance = torch.randn_like(GSM) * self.chaos_factor
-        GSM += chaos_disturbance
+        GSM = chaos_disturbance + GSM
         return GSM
 
     def normalize(self, x):
@@ -101,17 +100,21 @@ class MaxwellDemonFilter(nn.Module):
         attn_scores = self.attn_act(attn_scores)
         attn_probs = edge_softmax(graph, attn_scores)
 
+
         if self.args.use_filters == False:
             pass
         else:
             src,dst = graph.edges()
             src = src.to(dtype=torch.long)
             dst = dst.to(dtype=torch.long)
-            GSM = self.get_global_state(x)
-
-            filter = torch.sigmoid(self.filter(GSM[dst]-GSM[src]))
+            GSM = self.get_global_state(x,self.xx)
+            filter_input = torch.cat([GSM[dst], GSM[src]], dim=-1)  # Concatenate along the feature dimension
+            filter = torch.sigmoid(self.filter( filter_input ))
+            # filter = self.cosine_similarity(GSM[dst],GSM[src])
+            
             r_clamped = torch.sigmoid(self.r)
             attn_probs = attn_probs * (1 - r_clamped + r_clamped * filter.view(-1, 1))
+            # attn_probs = attn_probs * filter.view(-1, 1)
 
         x = x.reshape(-1, self.head_dim, self.num_heads)
         message = ops.u_mul_e_sum(graph, x, attn_probs)
