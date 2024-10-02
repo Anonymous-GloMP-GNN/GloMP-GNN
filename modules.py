@@ -114,7 +114,7 @@ class MaxwellDemonFilter(nn.Module):
             
             r_clamped = torch.sigmoid(self.r)
             attn_probs = attn_probs * (1 - r_clamped + r_clamped * filter.view(-1, 1))
-            # attn_probs = attn_probs * filter.view(-1, 1)
+            attn_probs = edge_softmax(graph, attn_scores)
 
         x = x.reshape(-1, self.head_dim, self.num_heads)
         message = ops.u_mul_e_sum(graph, x, attn_probs)
