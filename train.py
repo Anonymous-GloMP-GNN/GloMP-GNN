@@ -13,7 +13,7 @@ from model import Model, MyModel
 from FAGCN import FAGCN
 from GPRGNN import GPRGNN
 from datasets import Dataset
-from utils2 import Logger, get_parameter_groups, get_lr_scheduler_with_warmup,get_adj
+from utils import Logger, get_parameter_groups, get_lr_scheduler_with_warmup,get_adj
 import networkx as nx
 import random
 from measure_smoothing import dirichlet_normalized
