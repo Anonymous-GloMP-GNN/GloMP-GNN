@@ -13,9 +13,9 @@ class ResidualModuleWrapper(nn.Module):
     def forward(self, graph, x):
         x_res = self.normalization(x)
         x_res = self.module(graph, x_res)
-        # x = x + x_res
+        x = x + x_res
 
-        return x_res
+        return x
 
 
 class FeedForwardModule(nn.Module):
